@@ -1,7 +1,9 @@
 <?php
+define('TEST_ROOT', __DIR__);
+define('CODE_ROOT', TEST_ROOT . '/../../code');
 $_SERVER['aspen_server'] = 'unit_tests.localhost';
 
-require_once '../../code/web/bootstrap.php';
+require_once TEST_ROOT . '/../../code/web/bootstrap.php';
 //Load a clean database at the start of unit testing?
 global $configArray;
 global $aspen_db;
