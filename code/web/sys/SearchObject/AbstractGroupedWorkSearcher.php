@@ -690,22 +690,20 @@ abstract class SearchObject_AbstractGroupedWorkSearcher extends SearchObject_Sol
 			}
 			global $enabledModules;
 			global $library;
-			$searchSeriesModule = array_key_exists('Series', $enabledModules) && $library->useSeriesSearchIndex == 1;
-			if (preg_match('/(\b|^)(series)(\b|$)/i', $searchTerm) && $searchInterpreterSettings->triggerSeriesSearch) {
-				// Only redirect if bypassSeriesRedirect is not set
-				if (empty($_REQUEST['bypassSeriesRedirect'])) {
-					$originalSearchUrl = $_SERVER['REQUEST_URI'];
-					$searchTerm = preg_replace('/(\b)series(\b)/i', '', $searchTerm);
-					if ($searchSeriesModule) {
-						$redirectUrl = '/Union/Search?lookfor=' . urlencode(trim($searchTerm)) . '&searchIndex=SeriesKeyword&searchSource=series&seriesRedirectedFrom=' . urlencode($originalSearchUrl);
-					}
-					else {
-						// Switch to just searching the series index within the grouped work/catalog search type.
-						$redirectUrl = '/Union/Search?lookfor=' . urlencode(trim($searchTerm)) . '&searchIndex=Series&searchSource=local&seriesRedirectedFrom=' . urlencode($originalSearchUrl);
-					}
-					header('Location: ' . $redirectUrl);
-					exit;
-				}
+			
+			$shouldChangeRedirectUrl = preg_match('/(\b|^)(series)(\b|$)/i', $searchTerm) &&
+									$searchInterpreterSettings->triggerSeriesSearch &&
+									empty($_REQUEST['bypassSeriesRedirect']);
+			if ($shouldChangeRedirectUrl) {
+				$searchSeriesModule = array_key_exists('Series', $enabledModules) && $library->useSeriesSearchIndex == 1;
+				$originalSearchUrl = $_SERVER['REQUEST_URI'];
+				$searchTerm = preg_replace('/(\b)series(\b)/i', '', $searchTerm);
+
+				$searchPath = $searchSeriesModule ? '&searchIndex=SeriesKeyword&searchSource=series&seriesRedirectedFrom=' : '&searchIndex=Series&searchSource=local&seriesRedirectedFrom=';
+				$redirectUrl = '/Union/Search?lookfor=' . urlencode(trim($searchTerm)) . $searchPath . urlencode($originalSearchUrl);
+
+				header('Location: ' . $redirectUrl);
+				exit;
 			}
 		}
 		return $searchTerm;
