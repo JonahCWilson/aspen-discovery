@@ -7158,11 +7158,7 @@ class MyAccount_AJAX extends JSON_Action {
 		global $configArray;
 
 		$transactionType = $_REQUEST['type'];
-		if ($transactionType == 'donation') {
-			$result = $this->createGenericDonation('HeyCentric');
-		} else {
-			$result = $this->createGenericOrder('HeyCentric');
-		}
+		$result = ($transactionType === 'donation') ? $this->createGenericDonation('HeyCentric') : $this->createGenericOrder('HeyCentric');
 
 		if (array_key_exists('success', $result) && $result['success'] === false) {
 			return $result;
@@ -7207,157 +7203,61 @@ class MyAccount_AJAX extends JSON_Action {
 			];
 		}
 
-		$locationDetails = $patron->getCatalogDriver()->hasAdditionalFineFields() ? $patron->getCatalogDriver()->getAdditionalLocationDetails($patron->getHomeLocationCode()) : [];
+		$locationDetails = $patron->getCatalogDriver()->hasAdditionalFineFields() ? 
+			$patron->getCatalogDriver()->getAdditionalLocationDetails($patron->getHomeLocationCode()) : 
+			[];
+
+		// Create Helper Functions
+		$strFormatter = function($setting) {
+			$word = explode('-', $setting)[0];
+			return "&$word=";
+		};
+
+		$buildUrl = function($setting) use ($locationDetails, $urlParameterSettings) {
+			$word = explode('_', $setting)[0];
+			$urlTerm = "&$word=";
+			if (isset($urlParameterSettings[$word . '_kohaAdditionalField']) && $urlParameterSettings[$word .'_kohaAdditionalField'] != "none") {
+				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings[$word . '_kohaAdditionalField']));
+				$urlTerm .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
+			} else {
+				$urlTerm .= !empty($urlParameterSettings[$word . '_value']) ? $urlParameterSettings[$word . '_value'] : "";
+			}
+
+			return $urlTerm;
+		};
+
+		$reduceFunction = function($carry, $item) use ($buildUrl) {
+			return $carry . $buildUrl($item);
+		};
 
 		// URL parameters
 		$paymentRequestUrl = $heyCentricSettings->baseUrl;
-		if ($urlParameterSettings["client_includeInUrl"]) {
-			$paymentRequestUrl .= "client=";
-			if (isset($urlParameterSettings['client_kohaAdditionalField']) && $urlParameterSettings['client_kohaAdditionalField'] != "none") {
-				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['client_kohaAdditionalField']));
-				$paymentRequestUrl .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
-			} else {
-				$paymentRequestUrl .= !empty($urlParameterSettings['client_value']) ? $urlParameterSettings['client_value'] : "";
-			}
-		}
-		if ($urlParameterSettings["area_includeInUrl"]) {
-			$paymentRequestUrl .= "&area=";
-			if (isset($urlParameterSettings['area_kohaAdditionalField']) && $urlParameterSettings['area_kohaAdditionalField'] != "none") {
-				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['area_kohaAdditionalField']));
-				$paymentRequestUrl .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
-			} else {
-				$paymentRequestUrl .= !empty($urlParameterSettings['area_value']) ? $urlParameterSettings['area_value'] : "";
-			}
-		}
-		if ($urlParameterSettings["till_includeInUrl"]) {
-			$paymentRequestUrl .= "&till=";
-			if (isset($urlParameterSettings['till_kohaAdditionalField']) && $urlParameterSettings['till_kohaAdditionalField'] != "none") {
-				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['till_kohaAdditionalField']));
-				$paymentRequestUrl .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
-			} else {
-				$paymentRequestUrl .= !empty($urlParameterSettings['till_value']) ? $urlParameterSettings['till_value'] : "";
-			}
-		}
-		if ($urlParameterSettings["entity_includeInUrl"]) {
-			$paymentRequestUrl .= "&entity=";
-			if (isset($urlParameterSettings['entity_kohaAdditionalField']) && $urlParameterSettings['entity_kohaAdditionalField'] != "none") {
-				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['entity_kohaAdditionalField']));
-				$paymentRequestUrl .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
-			} else {
-				$paymentRequestUrl .= !empty($urlParameterSettings['entity_value']) ? $urlParameterSettings['entity_value'] : "";
-			}
-		}
-		if ($urlParameterSettings["co_includeInUrl"]) {
-			$paymentRequestUrl .= "&co=";
-			if (isset($urlParameterSettings['co_kohaAdditionalField']) && $urlParameterSettings['co_kohaAdditionalField'] != "none") {
-				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['co_kohaAdditionalField']));
-				$paymentRequestUrl .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
-			} else {
-				$paymentRequestUrl .= !empty($urlParameterSettings['co_value']) ? $urlParameterSettings['co_value'] : "";
-			}
-		}
-		if ($urlParameterSettings["bu_includeInUrl"]) {
-			$paymentRequestUrl .= "&bu=";
-			if (isset($urlParameterSettings['bu_kohaAdditionalField']) && $urlParameterSettings['bu_kohaAdditionalField'] != "none") {
-				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['bu_kohaAdditionalField']));
-				$paymentRequestUrl .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
-			} else {
-				$paymentRequestUrl .= !empty($urlParameterSettings['bu_value']) ? $urlParameterSettings['bu_value'] : "";
-			}
-		}
-		if ($urlParameterSettings["lang_includeInUrl"]) {
-			$paymentRequestUrl .= "&lang=";
-			if (isset($urlParameterSettings['lang_kohaAdditionalField']) && $urlParameterSettings['lang_kohaAdditionalField'] != "none") {
-				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['lang_kohaAdditionalField']));
-				$paymentRequestUrl .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
-			} else {
-				$paymentRequestUrl .= !empty($urlParameterSettings['lang_value']) ? $urlParameterSettings['lang_value'] : "";
-			}
-		}
-		if ($urlParameterSettings["mode_includeInUrl"]) {
-			$paymentRequestUrl .= "&mode=";
-			if (isset($urlParameterSettings['mode_kohaAdditionalField']) && $urlParameterSettings['mode_kohaAdditionalField'] != "none") {
-				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['mode_kohaAdditionalField']));
-				$paymentRequestUrl .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
-			} else {
-				$paymentRequestUrl .= !empty($urlParameterSettings['mode_value']) ? $urlParameterSettings['mode_value'] : "";
-			}
-		}
+		$includeInUrlArray = [
+			"client_includeInUrl",
+			"area_includeInUrl",
+			"till_includeInUrl",
+			"entity_includeInUrl",
+			"co_includeInUrl",
+			"bu_includeInUrl",
+			"lang_includeInUrl",
+			"mode_includeInUrl"
+		];
+		// Eliminate leading &mpersand
+		$urlParams = substr(array_reduce($includeInUrlArray, $reduceFunction, ''), 1);
 
 		// hash parameters
-		$hashParams = "";
-		if ($urlParameterSettings["client_includeInHash"]) {
-			$hashParams .= "client=";
-			if (isset($urlParameterSettings['client_kohaAdditionalField']) && $urlParameterSettings['client_kohaAdditionalField'] != "none") {
-				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['client_kohaAdditionalField']));
-				$hashParams .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
-			} else {
-				$hashParams .= "client=" . $urlParameterSettings['client_value'] ? $urlParameterSettings['client_value'] : "";
-			}
-		}
-		if ($urlParameterSettings["area_includeInHash"]) {
-			$hashParams .= "&area=";
-			if (isset($urlParameterSettings['area_kohaAdditionalField']) && $urlParameterSettings['area_kohaAdditionalField'] != "none") {
-				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['area_kohaAdditionalField']));
-				$hashParams .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
-			} else {
-				$hashParams .= "area=" . $urlParameterSettings['area_value'] ? $urlParameterSettings['area_value'] : "";
-			}
-		}
-		if ($urlParameterSettings["till_includeInHash"]) {
-			$hashParams .= "&till=";
-			if (isset($urlParameterSettings['till_kohaAdditionalField']) && $urlParameterSettings['till_kohaAdditionalField'] != "none") {
-				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['till_kohaAdditionalField']));
-				$hashParams .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
-			} else {
-				$hashParams .= "till=" . $urlParameterSettings['till_value'] ? $urlParameterSettings['till_value'] : "";
-			}
-		}
-		if ($urlParameterSettings["entity_includeInHash"]) {
-			$hashParams .= "&entity=";
-			if (isset($urlParameterSettings['entity_kohaAdditionalField']) && $urlParameterSettings['entity_kohaAdditionalField'] != "none") {
-				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['entity_kohaAdditionalField']));
-				$hashParams .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
-			} else {
-				$hashParams .= "entity=" . $urlParameterSettings['entity_value'] ? $urlParameterSettings['entity_value'] : "";
-			}
-		}
-		if ($urlParameterSettings["co_includeInHash"]) {
-			$hashParams .= "&co=";
-			if (isset($urlParameterSettings['co_kohaAdditionalField']) && $urlParameterSettings['co_kohaAdditionalField'] != "none") {
-				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['co_kohaAdditionalField']));
-				$hashParams .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
-			} else {
-				$hashParams .= "co=" . $urlParameterSettings['co_value'] ? $urlParameterSettings['co_value'] : "";
-			}
-		}
-		if ($urlParameterSettings["bu_includeInHash"]) {
-			$hashParams .= "&bu=";
-			if (isset($urlParameterSettings['bu_kohaAdditionalField']) && $urlParameterSettings['bu_kohaAdditionalField'] != "none") {
-				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['bu_kohaAdditionalField']));
-				$hashParams .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
-			} else {
-				$hashParams .= "bu=" . $urlParameterSettings['bu_value'] ? $urlParameterSettings['bu_value'] : "";
-			}
-		}
-		if ($urlParameterSettings["lang_includeInHash"]) {
-			$hashParams .= "&lang=";
-			if (isset($urlParameterSettings['lang_kohaAdditionalField']) && $urlParameterSettings['lang_kohaAdditionalField'] != "none") {
-				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['lang_kohaAdditionalField']));
-				$hashParams .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
-			} else {
-				$hashParams .= "lang=" . $urlParameterSettings['lang_value'] ? $urlParameterSettings['lang_value'] : "";
-			}
-		}
-		if ($urlParameterSettings["mode_includeInHash"]) {
-			$hashParams .= "&mode=";
-			if (isset($urlParameterSettings['mode_kohaAdditionalField']) && $urlParameterSettings['mode_kohaAdditionalField'] != "none") {
-				$snakeCaseFieldName = str_replace(" ", "_", strtolower($urlParameterSettings['mode_kohaAdditionalField']));
-				$hashParams .= urlencode(isset($locationDetails[$snakeCaseFieldName]) && $locationDetails[$snakeCaseFieldName] ? $locationDetails[$snakeCaseFieldName] : "none specified");
-			} else {
-				$hashParams .= "mode=" . $urlParameterSettings['mode_value'] ? $urlParameterSettings['mode_value'] : "";
-			}
-		}
+		$includeInHashArray = [
+			"client_includeInHash",
+			"area_includeInHash",
+			"till_includeInHash",
+			"entity_includeInHash",
+			"co_includeInHash",
+			"bu_includeInHash",
+			"lang_includeInHash",
+			"mode_includeInHash"
+		];
+		// Eliminate leading &mpersand
+		$hashParams = substr(array_reduce($includeInHashArray, $reduceFunction, $hashParams), 1);
 
 		// multiline hash and URL parameters
 		foreach ($finesSelected as $index => $fine) {
@@ -7616,7 +7516,7 @@ class MyAccount_AJAX extends JSON_Action {
 			'paymentRequestUrl' => $paymentRequestUrl,
 		];
 	}
-
+	
 	/** @noinspection PhpUnused */
 	function completeHeyCentricOrder(): void {
 		global $configArray;
