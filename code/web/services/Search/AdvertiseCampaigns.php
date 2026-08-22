@@ -1,5 +1,4 @@
 <?php
-require_once 'Action.php';
 require_once ROOT_DIR . '/sys/CommunityEngagement/Campaign.php';
 
 class AdvertiseCampaigns extends Action {

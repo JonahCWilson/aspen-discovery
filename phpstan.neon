@@ -4,6 +4,8 @@ parameters:
     level: 0
     paths:
         - code/web/
+    bootstrapFiles:
+        - phpstan-bootstrap.php
     scanFiles:
         - code/web/sys/Session/SessionInterface.php
         - code/web/sys/Session/MySQLSession.php
@@ -22,21 +24,27 @@ parameters:
         - code/web/sys/Authentication/OAuth2
     excludePaths:
         analyse:
+            - tests/*
+            - tmp/*
             - code/web/sys/File/MARC
+            - code/web/sys/Email/PHPMailer-6.9.1/*
             - code/web/services/Authentication/OAuth2_Authorize.php
             - code/web/services/Authentication/OAuth2_Token.php
             - code/web/sys/Authentication/OAuth2/*
+            - code/web/CAS-1.3.4/*
             - vendor/*
             - code/web/sys/Session/MySQLSession.php    
             - code/web/sys/Session/SessionInterface.php 
             - code/web/sys/mobileesp/mdetect.php
             - code/web/sys/mobile_device_detect.php
-            - code/web/Minify/FirePHP.php
-            - code/web/Minify/ImportProcessor.php
+            - code/web/Minify/*
             - code/web/Drivers/SIP2Driver.php
+            - code/web/sys/Smarty/*
             - code/web/RecordDrivers/Axis360RecordDriver.php
             - code/web/RecordDrivers/HooplaRecordDriver.php
             - code/web/RecordDrivers/MarcRecordDriver.php
             - code/web/RecordDrivers/OverDriveRecordDriver.php
             - code/web/RecordDrivers/PalaceProjectRecordDriver.php
             - code/web/services/SnapPay/Complete.php
+            - code/web/services/Authentication/SAML/extlib/*
+            - code/web/services/Authentication/SAML/lib/Saml2/*

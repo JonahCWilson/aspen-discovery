@@ -1,6 +1,5 @@
 <?php /** @noinspection SpellCheckingInspection */
 
-require_once 'bootstrap.php';
 require_once ROOT_DIR . '/CatalogConnection.php';
 require_once ROOT_DIR . '/CatalogFactory.php';
 require_once ROOT_DIR . '/sys/Authentication/SSOSetting.php';

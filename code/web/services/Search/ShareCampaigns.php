@@ -1,5 +1,4 @@
 <?php
-require_once 'Action.php';
 
 class ShareCampaigns extends Action {
 	function launch() {
